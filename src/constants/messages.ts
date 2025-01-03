@@ -23,7 +23,6 @@ export const MESSAGES = {
     INVALID_PASSWORD: 'Invalid password',
     UNAUTHORIZED: 'Unauthorized access',
     INVALID_TOKEN: 'Invalid or expired token',
-    INVALID_2FA_CODE: 'Invalid 2FA code',
 
     // User related errors
     USER_NOT_FOUND: 'User not found',
@@ -36,9 +35,21 @@ export const MESSAGES = {
     // Admin related errors
     ADMIN_NOT_FOUND: 'Admin not found',
 
+    // Validation related errors
+    VALIDATION_ERROR: 'Validation failed',
+    INVALID_INPUT: 'Invalid input data',
+    REQUIRED_FIELD: 'This field is required',
+    INVALID_FORMAT: 'Invalid format',
+    INVALID_USERNAME_FORMAT: 'Username must be between 3 and 50 characters',
+    INVALID_PASSWORD_FORMAT: 'Password must be at least 6 characters',
+    INVALID_2FA_FORMAT: 'Invalid 2FA code format - must be 6 digits',
+
     // Generic errors
     SERVER_ERROR: 'Something went wrong',
-    VALIDATION_ERROR: 'Validation error',
-    RESOURCE_EXISTS: 'Resource already exists'
+    RESOURCE_EXISTS: 'Resource already exists',
+
+    // Request format errors
+    INVALID_JSON: 'Invalid request format',
+    EMPTY_BODY: 'Request body cannot be empty'
   }
 } as const; 

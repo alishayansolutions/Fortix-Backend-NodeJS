@@ -92,7 +92,7 @@ export const verify2FA = async (req: Request, res: Response) => {
 
   if (!isValid) {
     const [errorResponse, status] = ResponseUtils.unauthorized(
-      MESSAGES.ERROR.INVALID_2FA_CODE
+      MESSAGES.ERROR.INVALID_2FA_FORMAT
     );
     return res.status(status).json(errorResponse);
   }

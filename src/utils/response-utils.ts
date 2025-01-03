@@ -39,7 +39,7 @@ export class ResponseUtils {
       {
         success: false,
         message,
-        ...(process.env.NODE_ENV === 'development' && { error })
+        error
       },
       statusCode
     ];
@@ -51,6 +51,7 @@ export class ResponseUtils {
   }
 
   static badRequest(message: string, error?: any): [ErrorResponse, number] {
+    console.log("Error: ", error);
     return this.error(message, STATUS_CODES.BAD_REQUEST, error);
   }
 
