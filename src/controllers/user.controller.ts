@@ -2,7 +2,6 @@ import { Response } from 'express';
 import * as userModel from '../models/user.model';
 import { CreateUserDTO, UpdateUserDTO } from '../types/user.types';
 import { AuthRequest } from '../middleware/auth.middleware';
-import { APIError } from '../utils/route-utils';
 import { ResponseUtils } from '../utils/response-utils';
 
 export const createUser = async (req: AuthRequest, res: Response) => {
@@ -11,25 +10,30 @@ export const createUser = async (req: AuthRequest, res: Response) => {
   // Check if username already exists
   const existingUsername = await userModel.findByUsername(userData.username);
   if (existingUsername) {
-    throw new APIError('Username already exists', 400);
+    const [errorResponse, status] = ResponseUtils.error('Username already exists', 400);
+    return res.status(status).json(errorResponse);
   }
 
   // Check if email already exists
   const existingEmail = await userModel.findByEmail(userData.email);
   if (existingEmail) {
-    throw new APIError('Email already registered', 400);
+    const [errorResponse, status] = ResponseUtils.error('Email already registered', 400);
+    return res.status(status).json(errorResponse);
   }
 
   const newUser = await userModel.createUser(userData);
-  res.status(201).json(ResponseUtils.success(
+  const [successResponse, status] = ResponseUtils.success(
     { user: newUser },
-    'User created successfully'
-  ));
+    'User created successfully',
+    201
+  );
+  res.status(status).json(successResponse);
 };
 
 export const getAllUsers = async (req: AuthRequest, res: Response) => {
   const users = await userModel.getAllUsers();
-  res.json(ResponseUtils.success({ users }));
+  const [successResponse, status] = ResponseUtils.success({ users });
+  res.status(status).json(successResponse);
 };
 
 export const getUserById = async (req: AuthRequest, res: Response) => {
@@ -37,11 +41,13 @@ export const getUserById = async (req: AuthRequest, res: Response) => {
   const user = await userModel.getUserById(userId);
   
   if (!user) {
-    throw new APIError('User not found', 404);
+    const [errorResponse, status] = ResponseUtils.error('User not found', 404);
+    return res.status(status).json(errorResponse);
   }
 
   const { password, ...userWithoutPassword } = user;
-  res.json(ResponseUtils.success({ user: userWithoutPassword }));
+  const [successResponse, status] = ResponseUtils.success({ user: userWithoutPassword });
+  res.status(status).json(successResponse);
 };
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
@@ -51,14 +57,16 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
   // Check if user exists
   const existingUser = await userModel.getUserById(userId);
   if (!existingUser) {
-    throw new APIError('User not found', 404);
+    const [errorResponse, status] = ResponseUtils.error('User not found', 404);
+    return res.status(status).json(errorResponse);
   }
 
   // Check username uniqueness
   if (updateData.username && updateData.username !== existingUser.username) {
     const usernameExists = await userModel.findByUsername(updateData.username);
     if (usernameExists) {
-      throw new APIError('Username already in use', 400);
+      const [errorResponse, status] = ResponseUtils.error('Username already in use', 400);
+      return res.status(status).json(errorResponse);
     }
   }
 
@@ -66,19 +74,22 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
   if (updateData.email && updateData.email !== existingUser.email) {
     const emailExists = await userModel.findByEmail(updateData.email);
     if (emailExists) {
-      throw new APIError('Email already in use', 400);
+      const [errorResponse, status] = ResponseUtils.error('Email already in use', 400);
+      return res.status(status).json(errorResponse);
     }
   }
 
   const updatedUser = await userModel.updateUser(userId, updateData);
   if (!updatedUser) {
-    throw new APIError('No updates provided', 400);
+    const [errorResponse, status] = ResponseUtils.error('No updates provided', 400);
+    return res.status(status).json(errorResponse);
   }
 
-  res.json(ResponseUtils.success(
+  const [successResponse, status] = ResponseUtils.success(
     { user: updatedUser },
     'User updated successfully'
-  ));
+  );
+  res.status(status).json(successResponse);
 };
 
 export const deleteUser = async (req: AuthRequest, res: Response) => {
@@ -86,8 +97,13 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
   
   const deleted = await userModel.deleteUser(userId);
   if (!deleted) {
-    throw new APIError('User not found', 404);
+    const [errorResponse, status] = ResponseUtils.error('User not found', 404);
+    return res.status(status).json(errorResponse);
   }
 
-  res.json(ResponseUtils.success(null, 'User deleted successfully'));
+  const [successResponse, status] = ResponseUtils.success(
+    null,
+    'User deleted successfully'
+  );
+  res.status(status).json(successResponse);
 }; 

@@ -10,34 +10,28 @@ export const routeHandler = (controller: ControllerFunction) => {
       await controller(req, res);
     } catch (error: any) {
       // Handle specific error types
-      if (error.status) {
-        // Custom error with status
-        res.status(error.status).json(ResponseUtils.error(error.message));
+      if (error.statusCode) {
+        // Error with status code
+        const [errorResponse, status] = ResponseUtils.error(error.message, error.statusCode);
+        res.status(status).json(errorResponse);
       } else if (error.name === 'ValidationError') {
         // Validation errors
-        res.status(400).json(ResponseUtils.error(error.message));
+        const [errorResponse, status] = ResponseUtils.error(error.message, 400);
+        res.status(status).json(errorResponse);
       } else if (error.code === '23505') {
         // PostgreSQL unique violation
-        res.status(409).json(ResponseUtils.error('Resource already exists'));
+        const [errorResponse, status] = ResponseUtils.error('Resource already exists', 409);
+        res.status(status).json(errorResponse);
       } else {
         // Default error handler
         console.error('Unhandled error:', error);
-        res.status(500).json(ResponseUtils.error(
+        const [errorResponse, status] = ResponseUtils.error(
           'Something went wrong!',
+          500,
           process.env.NODE_ENV === 'development' ? error : undefined
-        ));
+        );
+        res.status(status).json(errorResponse);
       }
     }
   };
-};
-
-// Custom error class for API errors
-export class APIError extends Error {
-  constructor(
-    public message: string,
-    public status: number = 500
-  ) {
-    super(message);
-    this.name = 'APIError';
-  }
-} 
+}; 
