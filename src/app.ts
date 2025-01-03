@@ -6,11 +6,10 @@ import routes from './routes';
 dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
-// Initialize database before starting the server
 const startServer = async () => {
   try {
     await initializeDatabase();
@@ -21,7 +20,10 @@ const startServer = async () => {
     // Error handling middleware
     app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       console.error(err.stack);
-      res.status(500).json({ message: 'Something went wrong!' });
+      res.status(500).json({ 
+        message: 'Something went wrong!',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
     });
 
     app.listen(port, () => {

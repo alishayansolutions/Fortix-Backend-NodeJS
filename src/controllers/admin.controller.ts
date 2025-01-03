@@ -1,64 +1,53 @@
 import { Request, Response } from 'express';
 import * as adminModel from '../models/admin.model';
+import { AdminLoginDTO, Admin2FAVerifyDTO } from '../types/admin.types';
+import { AuthRequest } from '../middleware/auth.middleware';
+import { APIError } from '../utils/route-utils';
+import { ResponseUtils } from '../utils/response-utils';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import speakeasy from 'speakeasy';
-import { AdminLoginDTO, Admin2FAVerifyDTO } from '../types/admin.types';
-import { send2FACode } from '../services/email.service';
-import { AuthRequest } from '../middleware/auth.middleware';
 
 export const login = async (req: Request, res: Response) => {
-  try {
-    const { username, password }: AdminLoginDTO = req.body;
+  const { username, password }: AdminLoginDTO = req.body;
 
-    // Find admin by username
-    const admin = await adminModel.findByUsername(username);
-    if (!admin) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+  const admin = await adminModel.findByUsername(username);
+  if (!admin) {
+    throw new APIError('Invalid credentials', 401);
+  }
 
-    // Verify password
-    const isValidPassword = await bcrypt.compare(password, admin.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+  const isValidPassword = await bcrypt.compare(password, admin.password);
+  if (!isValidPassword) {
+    throw new APIError('Invalid credentials', 401);
+  }
 
-    if (admin.is_2fa_enabled) {
-      // Generate temporary token for 2FA verification
-      const tempToken = jwt.sign(
-        { id: admin.id, require2FA: true },
-        process.env.JWT_SECRET!,
-        { expiresIn: '30s' }
-      );
-
-      // Generate and send 2FA code
-      const code = speakeasy.totp({
-        secret: admin.secret_2fa!,
-        encoding: 'base32'
-      });
-      console.log("2FA code: ", code);
-
-    //   await send2FACode(admin.email, code);
-
-      return res.json({
-        message: '2FA code sent to your email',
-        tempToken,
-        require2FA: true
-      });
-    }
-
-    // If 2FA is not enabled, generate final token
-    const token = jwt.sign(
-      { id: admin.id },
+  if (admin.is_2fa_enabled) {
+    const tempToken = jwt.sign(
+      { id: admin.id, require2FA: true },
       process.env.JWT_SECRET!,
-      { expiresIn: '24h' }
+      { expiresIn: '30s' }
     );
 
-    const { password: _, secret_2fa: __, ...adminData } = admin;
-    res.json({ user: adminData, token });
-  } catch (error) {
-    res.status(500).json({ message: 'Error during login', error });
+    const code = speakeasy.totp({
+      secret: admin.secret_2fa!,
+      encoding: 'base32'
+    });
+    console.log("2FA code: ", code);
+
+    return res.json(ResponseUtils.success({
+      tempToken,
+      require2FA: true
+    }, '2FA code sent to your email'));
   }
+
+  const token = jwt.sign(
+    { id: admin.id },
+    process.env.JWT_SECRET!,
+    { expiresIn: '24h' }
+  );
+
+  const { password: _, secret_2fa: __, ...adminData } = admin;
+  res.json(ResponseUtils.success({ user: adminData, token }));
 };
 
 export const verify2FA = async (req: Request, res: Response) => {

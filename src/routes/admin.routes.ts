@@ -1,41 +1,18 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
-import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
+import { routeHandler } from '../utils/route-utils';
 
 const router = Router();
 
-// Admin auth routes
-router.post('/login', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await adminController.login(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
+// Public routes
+router.post('/login', routeHandler(adminController.login));
+router.post('/verify-2fa', routeHandler(adminController.verify2FA));
 
-router.post('/verify-2fa', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    await adminController.verify2FA(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
+// Protected routes
+router.use(authMiddleware);
 
-
-router.post('/enable-2fa', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    await adminController.enable2FA(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
-
-router.post('/disable-2fa', authMiddleware, async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    await adminController.disable2FA(req, res);
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/enable-2fa', routeHandler(adminController.enable2FA));
+router.post('/disable-2fa', routeHandler(adminController.disable2FA));
 
 export default router; 
