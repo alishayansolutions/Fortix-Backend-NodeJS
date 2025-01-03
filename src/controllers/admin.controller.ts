@@ -3,6 +3,7 @@ import * as adminModel from '../models/admin.model';
 import { AdminLoginDTO, Admin2FAVerifyDTO } from '../types/admin.types';
 import { AuthRequest } from '../middleware/auth.middleware';
 import { ResponseUtils } from '../utils/response-utils';
+import { MESSAGES } from '../constants/messages';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import speakeasy from 'speakeasy';
@@ -12,13 +13,17 @@ export const login = async (req: Request, res: Response) => {
 
   const admin = await adminModel.findByUsername(username);
   if (!admin) {
-    const [errorResponse, status] = ResponseUtils.error('Invalid credentials', 401);
+    const [errorResponse, status] = ResponseUtils.unauthorized(
+      MESSAGES.ERROR.USERNAME_NOT_FOUND
+    );
     return res.status(status).json(errorResponse);
   }
 
   const isValidPassword = await bcrypt.compare(password, admin.password);
   if (!isValidPassword) {
-    const [errorResponse, status] = ResponseUtils.error('Invalid credentials', 401);
+    const [errorResponse, status] = ResponseUtils.unauthorized(
+      MESSAGES.ERROR.INVALID_PASSWORD
+    );
     return res.status(status).json(errorResponse);
   }
 
@@ -35,10 +40,13 @@ export const login = async (req: Request, res: Response) => {
     });
     console.log("2FA code: ", code);
 
-    const [successResponse, status] = ResponseUtils.success({
-      tempToken,
-      require2FA: true
-    }, '2FA code sent to your email');
+    const [successResponse, status] = ResponseUtils.success(
+      {
+        tempToken,
+        require2FA: true
+      },
+      MESSAGES.SUCCESS.ADMIN_2FA_CODE_SENT
+    );
     return res.status(status).json(successResponse);
   }
 
@@ -49,41 +57,46 @@ export const login = async (req: Request, res: Response) => {
   );
 
   const { password: _, secret_2fa: __, ...adminData } = admin;
-  const [successResponse, status] = ResponseUtils.success({ user: adminData, token });
+  const [successResponse, status] = ResponseUtils.success(
+    { user: adminData, token },
+    MESSAGES.SUCCESS.ADMIN_LOGIN
+  );
   res.status(status).json(successResponse);
 };
 
 export const verify2FA = async (req: Request, res: Response) => {
   const { token, code }: Admin2FAVerifyDTO = req.body;
 
-  // Verify temp token
   const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: number, require2FA: boolean };
   if (!decoded.require2FA) {
-    const [errorResponse, status] = ResponseUtils.error('Invalid token', 400);
+    const [errorResponse, status] = ResponseUtils.badRequest(
+      MESSAGES.ERROR.INVALID_TOKEN
+    );
     return res.status(status).json(errorResponse);
   }
 
-  // Use findById instead of findByUsername
   const admin = await adminModel.findById(decoded.id);
   if (!admin) {
-    const [errorResponse, status] = ResponseUtils.error('Admin not found', 401);
+    const [errorResponse, status] = ResponseUtils.notFound(
+      MESSAGES.ERROR.ADMIN_NOT_FOUND
+    );
     return res.status(status).json(errorResponse);
   }
 
-  // Verify 2FA code
   const isValid = speakeasy.totp.verify({
     secret: admin.secret_2fa!,
     encoding: 'base32',
     token: code,
-    window: 1 // Allows for 30 seconds of time drift
+    window: 1
   });
 
   if (!isValid) {
-    const [errorResponse, status] = ResponseUtils.error('Invalid 2FA code', 401);
+    const [errorResponse, status] = ResponseUtils.unauthorized(
+      MESSAGES.ERROR.INVALID_2FA_CODE
+    );
     return res.status(status).json(errorResponse);
   }
 
-  // Generate final token
   const finalToken = jwt.sign(
     { id: admin.id },
     process.env.JWT_SECRET!,
@@ -91,47 +104,62 @@ export const verify2FA = async (req: Request, res: Response) => {
   );
 
   const { password: _, secret_2fa: __, ...adminData } = admin;
-  const [successResponse, status] = ResponseUtils.success({ user: adminData, token: finalToken });
+  const [successResponse, status] = ResponseUtils.success(
+    { user: adminData, token: finalToken },
+    MESSAGES.SUCCESS.ADMIN_2FA_VERIFIED
+  );
   res.status(status).json(successResponse);
 };
 
 export const enable2FA = async (req: AuthRequest, res: Response) => {
   const id = req.id;
   if (!id) {
-    const [errorResponse, status] = ResponseUtils.error('Unauthorized', 401);
+    const [errorResponse, status] = ResponseUtils.unauthorized(
+      MESSAGES.ERROR.UNAUTHORIZED
+    );
     return res.status(status).json(errorResponse);
   }
 
-  // Verify admin exists
   const admin = await adminModel.findById(id);
   if (!admin) {
-    const [errorResponse, status] = ResponseUtils.error('Admin not found', 404);
+    const [errorResponse, status] = ResponseUtils.notFound(
+      MESSAGES.ERROR.ADMIN_NOT_FOUND
+    );
     return res.status(status).json(errorResponse);
   }
 
   const secret = speakeasy.generateSecret();
   await adminModel.updateAdmin2FASecret(id, secret.base32);
 
-  const [successResponse, status] = ResponseUtils.success(null, '2FA has been enabled');
+  const [successResponse, status] = ResponseUtils.success(
+    null,
+    MESSAGES.SUCCESS.ADMIN_2FA_ENABLED
+  );
   res.status(status).json(successResponse);
 };
 
 export const disable2FA = async (req: AuthRequest, res: Response) => {
   const id = req.id;
   if (!id) {
-    const [errorResponse, status] = ResponseUtils.error('Unauthorized', 401);
+    const [errorResponse, status] = ResponseUtils.unauthorized(
+      MESSAGES.ERROR.UNAUTHORIZED
+    );
     return res.status(status).json(errorResponse);
   }
 
-  // Verify admin exists
   const admin = await adminModel.findById(id);
   if (!admin) {
-    const [errorResponse, status] = ResponseUtils.error('Admin not found', 404);
+    const [errorResponse, status] = ResponseUtils.notFound(
+      MESSAGES.ERROR.ADMIN_NOT_FOUND
+    );
     return res.status(status).json(errorResponse);
   }
   
   await adminModel.disable2FA(id);
 
-  const [successResponse, status] = ResponseUtils.success(null, '2FA has been disabled');
+  const [successResponse, status] = ResponseUtils.success(
+    null,
+    MESSAGES.SUCCESS.ADMIN_2FA_DISABLED
+  );
   res.status(status).json(successResponse);
 }; 

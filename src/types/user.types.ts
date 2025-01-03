@@ -22,4 +22,9 @@ export interface UpdateUserDTO {
   password?: string;
   role?: 'admin' | 'user';
   is_active?: boolean;
+}
+
+export interface UserLoginDTO {
+  email: string;
+  password: string;
 } 
