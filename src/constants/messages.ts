@@ -13,7 +13,14 @@ export const MESSAGES = {
     USER_UPDATED: 'User updated successfully',
     USER_DELETED: 'User deleted successfully',
     USERS_FETCHED: 'Users fetched successfully',
-    USER_FETCHED: 'User fetched successfully'
+    USER_FETCHED: 'User fetched successfully',
+
+    // Business Case related
+    BUSINESS_CASE_CREATED: 'Business case created successfully',
+    BUSINESS_CASE_UPDATED: 'Business case updated successfully',
+    BUSINESS_CASE_DELETED: 'Business case deleted successfully',
+    BUSINESS_CASES_FETCHED: 'Business cases fetched successfully',
+    BUSINESS_CASE_FETCHED: 'Business case fetched successfully'
   },
   ERROR: {
     // Authentication errors
@@ -50,6 +57,12 @@ export const MESSAGES = {
 
     // Request format errors
     INVALID_JSON: 'Invalid request format',
-    EMPTY_BODY: 'Request body cannot be empty'
+    EMPTY_BODY: 'Request body cannot be empty',
+
+    // Business Case related errors
+    BUSINESS_CASE_NOT_FOUND: 'Business case not found',
+    INVALID_DETECTION_TYPE: 'Invalid detection type',
+    INVALID_CONFIDENCE_THRESHOLD: 'Confidence threshold must be between 0 and 1',
+    INVALID_OBJECTS: 'Invalid objects to detect'
   }
 } as const; 

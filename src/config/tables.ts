@@ -21,6 +21,17 @@ export const tables = {
       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
     );
+  `,
+  business_cases: `
+    CREATE TABLE business_cases (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      detection_type VARCHAR(50) NOT NULL,
+      confidence_threshold DECIMAL(3,2) NOT NULL,
+      objects_to_detect TEXT[] NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    );
   `
 };
 
@@ -38,5 +49,5 @@ export const initialData = {
       RETURNING id, username, email;
     `,
     values: ['admin', 'admin@example.com', 'admin123']
-  }
+  },
 }; 
